@@ -2,16 +2,24 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
 var cors = require('cors');
 const bodyParser = require('body-parser');
 
 var indexRouter = require('./routes/index');
-const animalShelterRouter = require('./router/animalshelter');
-const authRouter = require('./router/auth');
+const ownerRouter = require("./router/owner");
+const animalShelterRouter = require("./router/animalshelter");
+const petRouter = require("./router/pets");
+const surveyRouter = require("./router/survey");
+const passportConfig = require("./config/passport");
+const passport = require("passport");
 
 var app = express();
 
+/* image upload limit */
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb" }));
+
+const uploadController = require("./controllers/upload");
 
 // database setup
 var mongoose = require('mongoose');
@@ -35,20 +43,28 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+//access control allow origin
+const corsOptions = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
 //authentication
-app.use(cors());
+app.use(cors(corsOptions));
 
 // allow to access the request body using req.body in routes.
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/', indexRouter);
-//authentication do not move
-app.use('/auth', authRouter);
+//initialize passportjs
+passportConfig(passport);
+app.use(passport.initialize());
 
-//Threepat Kiatkamol - Create pets.js file to control the request
-app.use('/animalshelter', animalShelterRouter);
+//model routes
+app.use('/', indexRouter);
+app.use("/owner", ownerRouter);
+app.use("/animalshelter", animalShelterRouter);
+app.use("/pets", petRouter);
+app.use("/survey", surveyRouter);
 
 
 // catch 404 and forward to error handler
