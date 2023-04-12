@@ -1,62 +1,83 @@
 const express = require("express");
-const shelterUser = require("../models/animalshelter");
-const bcrypt = require("bcryptjs");
-const router = express.Router();
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
-
+const bcrypt = require("bcrypt");
+const router = express.Router();
 const configurePassport = require("../config/passport");
+const Owner = require("../models/owner");
 
 const JWT_SECRET = "your-secret-key";
+
 // Configure Passport
 configurePassport(passport);
 
-//Threepat- show info that got from MondoDB
 router.get("/info", async (req, res) => {
   try {
-    const shelteruser = await shelterUser.find();
-    res.json(shelteruser);
+    const owner = await Owner.find();
+    res.json(owner);
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
 });
 
-//Threepat- create post request to send info to MongoDB
-router.post("/register", async (req, res) => {
+// Register a new pet owner
+router.post("/addowner", async (req, res) => {
   try {
-    const { password, animalShelterName, location, phoneNumber, email, pets } =
-      req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber,
+      city,
+      country,
+      province,
+      street,
+      age,
+      existingPetOwner,
+      favorites,
+    } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    //check if user already exist
-    const existingUser = await shelterUser.findOne({ email });
+    // Check if user already exists
+    const existingUser = await Owner.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "user already exist" });
+      return res
+        .status(409)
+        .json({ message: "User with this email already exists" });
     }
 
-    //create new  user
-    const shelteruser = new shelterUser({
+    // Create new pet owner object
+    const user = new Owner({
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
-      animalShelterName,
-      location,
       phoneNumber,
-      pets,
-      type: "Shelter User",
+      country,
+      city,
+      province,
+      street,
+      age,
+      existingPetOwner,
+      favorites,
+      type: "Pet Owner",
     });
-    await shelteruser.save();
-    const token = jwt.sign({ sub: shelteruser._id }, JWT_SECRET);
-    console.log(token);
+
+    // Save the new user object to the database
+    await user.save();
+    const token = jwt.sign({ sub: user._id }, JWT_SECRET);
     return res.json({ token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
-router.post("/login", async (req, res, next) => {
-  passport.authenticate("shelterlocal", async (err, user) => {
+// Login existing user
+router.post("/userlogin", async (req, res, next) => {
+  passport.authenticate("petownerlocal", async (err, user) => {
     try {
       if (err || !user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -66,14 +87,11 @@ router.post("/login", async (req, res, next) => {
         if (error) return next(error);
 
         const token = jwt.sign({ sub: user._id }, JWT_SECRET);
-        //console.log(token);
+        console.log(token);
         //res.cookie("jwt", token, { httpOnly: true, secure: true });
-        //return res.status(200).json({ token });
         res
           .set("Authorization", `Bearer ${token}`)
           .json({ message: "Login successful", token });
-
-        //return res.status(200).json({ message: "Access Granted" });
       });
     } catch (error) {
       return next(error);
@@ -81,15 +99,11 @@ router.post("/login", async (req, res, next) => {
   })(req, res, next);
 });
 
-//get  profile
+// Get user profile
 router.get(
   "/profile",
-  passport.authenticate("shelterjwtStrategy", { session: false }),
+  passport.authenticate("petownerjwtStrategy", { session: false }),
   (req, res) => {
-    res.set(
-      "Authorization",
-      `Bearer ${req.headers.authorization.split(" ")[1]}`
-    );
     res.json(req.user);
   }
 );
@@ -98,6 +112,7 @@ router.post("/logout", (req, res) => {
   //req.logout(); // if using sessions
   // or
   req.user = null; // if using tokens
+
   res.json({ message: "Successfully logged out." });
 });
 
