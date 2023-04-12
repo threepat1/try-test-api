@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/947dae20-0224-4df3-8690-5444d6caa95b/resourceGroups/peta-rg/providers/Microsoft.Web/sites/petAdoptionGo",
+    "appService.deploySubpath": "."
+}
