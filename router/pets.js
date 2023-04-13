@@ -12,6 +12,8 @@ router.post(
     const {
       petId,
       petName,
+      petGender,
+      petBreed,
       petCategory,
       age,
       gwithFirstPetOwner,
@@ -37,6 +39,8 @@ router.post(
       const pet = new Pet({
         petId,
         petName,
+        petGender,
+        petBreed,
         petCategory,
         shelterId: req.user._id,
         age,
@@ -90,31 +94,76 @@ router.get(
 router.get("/pets", async (req, res) => {
   try {
     const data = await Pet.find(); //add { shelterId: req.user._id } inside find to query based on shelterId
-    res.set(
-      "Authorization",
-      `Bearer ${req.headers.authorization.split(" ")[1]}`
-    );
+    // res.set(
+    //   "Authorization",
+    //   `Bearer ${req.headers.authorization.split(" ")[1]}`
+    // );
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-//   try {
-//     const pets = await Pet.find().populate(
-//       "animalShelter",
-//       "animalShelterName"
-//     );
-//     res.json(pets);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Server error");
-//   }
-// });
+
+//api to get pet based on pet id
+router.get("/pet/:petid", async (req, res) => {
+  try {
+    const data = await Pet.findOne({ _id: req.params.petid }); //find a pet by its id
+    if (!data) {
+      //if pet not found, send a 404 response
+      return res.status(404).json({ message: "Pet not found" });
+    }
+    // res.set(
+    //   "Authorization",
+    //   `Bearer ${req.headers.authorization.split(" ")[1]}`
+    // );
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 router.post("/uploadImage", (req, res) => {
   uploadImage(req.body.image)
     .then((url) => res.send(url))
     .catch((err) => res.status(500).send(err));
+});
+
+//edit pet API
+router.get("/editpet/:id", async (req, res) => {
+  let id = req.params.id;
+  //console.log("Get statement sending details on id:",id)
+  try {
+    const pet = await Pet.find({ _id: id }); //ObjectId(id) })
+    if (pet) {
+      //console.log(pet);
+      res.json(pet);
+    } else {
+      res.json("no pet found by that id.");
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+});
+//update pet API
+router.put("/editpet/:id", async (req, res) => {
+  let id = req.params.id;
+  try {
+    const pet = await Pet.findOneAndUpdate(
+      { _id: id }, // search for the pet with the given id
+      req.body, // update the pet document with the properties in the request body
+      { new: true } // return the updated document
+    );
+    if (pet) {
+      console.log(pet);
+      res.json(pet);
+    } else {
+      res.json("no pet found by that id.");
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
 });
 
 module.exports = router;

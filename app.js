@@ -45,8 +45,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //access control allow origin
 const corsOptions = {
-  origin: "http://localhost:5173",
-  credentials: true,
+  origin: "https://pet-adoption-comp231.netlify.app",
+  //   credentials: true,
 };
 //authentication
 app.use(cors(corsOptions));
