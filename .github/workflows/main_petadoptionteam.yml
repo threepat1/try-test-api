@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'petadoptionteam'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4F62E738E8244DFDB882FB9C0A6F39F6 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_23C7F1650E044BD48449DE9A5849E4D0 }}
           package: .
